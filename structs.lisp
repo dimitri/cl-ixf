@@ -84,6 +84,12 @@
   (setf (ixf-column-has-default col)
         (char= #\Y (get-record-property :IXFCDEF record)))
 
+  (when (ixf-column-has-default col)
+    (setf (ixf-column-default col)
+          (subseq (get-record-property :IXFCDEFV record)
+                  0
+                  (get-record-property :IXFCDEFL record))))
+
   (setf (ixf-column-pkey-pos col) (get-record-property :IXFCKPOS record))
   (setf (ixf-column-type col)     (get-record-property :IXFCTYPE record))
   (setf (ixf-column-length col)   (get-record-property :IXFCLENG record))
