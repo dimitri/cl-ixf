@@ -10,6 +10,8 @@
                  #:md5                  ; check archive checksums
                  #:alexandria           ; utils
                  #:babel                ; Encoding conversions
+                 #:local-time           ; Parsing timestamps
+                 #:cl-ppcre             ; Regular expressions
                  )
     :components ((:file "package")
                  (:file "records"   :depends-on ("package"))

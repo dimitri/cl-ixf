@@ -51,3 +51,26 @@
   "Read an encoded string in data from pos to length."
   (babel:octets-to-string data :start pos :end (+ pos length)))
 
+(defun parse-ixf-timestamp (data pos length)
+  "Read an IXF timestamp string.
+
+   From the docs:
+
+   Each time stamp is a character string of the form
+   yyyy-mm-dd-hh.mm.ss.nnnnnn (year month day hour minutes seconds
+   fractional seconds).
+
+   Starting with Version 9.7, the timestamp precision is contained in the
+   IXFCLENG field of the column descriptor record, and cannot exceed 12.
+   before Version 9.7, IXFCLENG is not used, and should contain blanks.
+
+   Valid characters within TIMESTAMP are invariant in all PC ASCII code
+   pages; therefore, IXFCSBCP and IXFCDBCP are not significant, and should
+   be zero."
+  (let ((datestring
+         (map 'string #'code-char (subseq data pos (+ pos length 20)))))
+
+    (cl-ppcre:register-groups-bind ((#'parse-integer year month day hour min sec frac))
+        ("(....)-(..)-(..)-(..).(..).(..).(\\d+)" datestring)
+      (let ((ns (* frac (expt 10 (- 9 length)))))
+        (local-time:encode-timestamp ns sec min hour day month year)))))
