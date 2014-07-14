@@ -36,21 +36,66 @@
   (and (= #xff (aref data pos))
        (= #xff (aref data (+ 1 pos)))))
 
+
+;;;
+;;; Reading numbers
+;;;
+(defun unsigned-to-signed (byte n)
+  (declare (type fixnum n) (type unsigned-byte byte))
+  (logior byte (- (mask-field (byte 1 (1- (* n 8))) byte))))
+
 (defun parse-ixf-smallint (data pos)
   "Read a 2-byte integer."
-  (logior (ash (aref data (+ 1 pos)) 8) (aref data pos)))
+  (unsigned-to-signed (logior (ash (aref data (+ 1 pos)) 8) (aref data pos)) 2))
 
 (defun parse-ixf-integer (data pos)
   "Read a 4-byte integer."
-  (logior (ash (aref data (+ pos 3)) 24)
-          (ash (aref data (+ pos 2)) 16)
-          (ash (aref data (+ pos 1)) 8)
-          (aref data pos)))
+  (unsigned-to-signed (logior (ash (aref data (+ pos 3)) 24)
+                              (ash (aref data (+ pos 2)) 16)
+                              (ash (aref data (+ pos 1)) 8)
+                              (aref data pos))
+                      4))
 
+(defun parse-ixf-bigint (data pos)
+  "Read a 4-byte integer."
+  (unsigned-to-signed (logior (parse-ixf-integer data pos)
+                              (ash (parse-ixf-integer data (+ 4 pos)) 32))
+                      8))
+
+(defun parse-ixf-decimal (data pos precision scale)
+  "Read a DECIMAL BCD IBM format.
+
+   The right documentation to be able to make sense of the data seems to be
+   found at http://www.simotime.com/datapk01.htm, at least it allows
+   progress to be made."
+
+  (let* ((nbytes (floor (+ precision 2) 2))
+         (bytes  (subseq data pos (+ pos nbytes)))
+         (sign   (if (= #xD (ldb (byte 4 0) (aref bytes (- nbytes 1))))
+                     -1 1)))
+    (* sign
+       (/
+        (loop :for byte :across bytes
+           :for num :from 1
+           :for pow  := (expt 10 precision) :then (floor pow 100)
+           :for high := (ldb (byte 4 4) byte)
+           :for low  := (ldb (byte 4 0) byte)
+           :when (= num nbytes) :sum (* high pow)
+           :else :sum (+ (* high pow) (* low (/ pow 10))))
+        (expt 10 scale)))))
+
+
+;;;
+;;; Reading encoded strings
+;;;
 (defun parse-ixf-string (data pos length)
   "Read an encoded string in data from pos to length."
   (babel:octets-to-string data :start pos :end (+ pos length)))
 
+
+;;;
+;;; Reading ascii-encoded date and time strings
+;;;
 (defun parse-ixf-timestamp (data pos length)
   "Read an IXF timestamp string.
 

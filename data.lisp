@@ -11,6 +11,13 @@
     (when nullable (setf pos (+ 2 pos)))
     (case data-type
       (#. +integer+   (parse-ixf-integer data pos))
+      (#. +smallint+  (parse-ixf-smallint data pos))
+      (#. +bigint+    (parse-ixf-bigint data pos))
+
+      (#. +decimal+   (let* ((length    (format nil "~5,'0d" length))
+                             (precision (parse-integer length :end 3))
+                             (scale     (parse-integer length :start 3)))
+                        (parse-ixf-decimal data pos precision scale)))
 
       (#. +timestamp+ (parse-ixf-timestamp data pos length))
 
