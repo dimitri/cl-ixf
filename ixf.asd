@@ -12,6 +12,7 @@
                  #:babel                ; Encoding conversions
                  #:local-time           ; Parsing timestamps
                  #:cl-ppcre             ; Regular expressions
+                 #:ieee-floats          ; Decoding IEEE Floats
                  )
     :components ((:file "package")
                  (:file "records"   :depends-on ("package"))

@@ -19,6 +19,8 @@
                              (scale     (parse-integer length :start 3)))
                         (parse-ixf-decimal data pos precision scale)))
 
+      (#. +float+     (parse-ixf-float data pos length))
+
       (#. +timestamp+ (parse-ixf-timestamp data pos length))
 
       (#. +char+      (parse-ixf-string data pos length))

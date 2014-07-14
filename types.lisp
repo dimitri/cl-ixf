@@ -48,19 +48,25 @@
   "Read a 2-byte integer."
   (unsigned-to-signed (logior (ash (aref data (+ 1 pos)) 8) (aref data pos)) 2))
 
+(defun parse-ixf-unsigned-integer (data pos)
+  "Read an unsigned 4-byte integer."
+  (logior (ash (aref data (+ pos 3)) 24)
+          (ash (aref data (+ pos 2)) 16)
+          (ash (aref data (+ pos 1)) 8)
+          (aref data pos)))
+
+(defun parse-ixf-unsigned-bigint (data pos)
+  "Read an unsigned 8-byte integer."
+  (logior (parse-ixf-unsigned-integer data pos)
+          (ash (parse-ixf-unsigned-integer data (+ 4 pos)) 32)))
+
 (defun parse-ixf-integer (data pos)
-  "Read a 4-byte integer."
-  (unsigned-to-signed (logior (ash (aref data (+ pos 3)) 24)
-                              (ash (aref data (+ pos 2)) 16)
-                              (ash (aref data (+ pos 1)) 8)
-                              (aref data pos))
-                      4))
+  "Read a signed 4-byte integer."
+  (unsigned-to-signed (parse-ixf-unsigned-integer data pos) 4))
 
 (defun parse-ixf-bigint (data pos)
-  "Read a 4-byte integer."
-  (unsigned-to-signed (logior (parse-ixf-integer data pos)
-                              (ash (parse-ixf-integer data (+ 4 pos)) 32))
-                      8))
+  "Read a signed 8-byte integer."
+  (unsigned-to-signed (parse-ixf-unsigned-bigint data pos) 8))
 
 (defun parse-ixf-decimal (data pos precision scale)
   "Read a DECIMAL BCD IBM format.
@@ -83,6 +89,15 @@
            :when (= num nbytes) :sum (* high pow)
            :else :sum (+ (* high pow) (* low (/ pow 10))))
         (expt 10 scale)))))
+
+(defun parse-ixf-float (data pos length)
+  "Parse a FLOATING POINT machine IBM format."
+  (cond
+    ((= 4 length)
+     (ieee-floats:decode-float32 (parse-ixf-unsigned-integer data pos)))
+
+    ((= 8 length)
+     (ieee-floats:decode-float64 (parse-ixf-unsigned-bigint data pos)))))
 
 
 ;;;
