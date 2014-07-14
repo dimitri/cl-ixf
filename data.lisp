@@ -19,10 +19,12 @@
 
 (defmethod parse-data-record ((ixf ixf-file) record)
   "Parse given data record and return what we found."
-  (loop :with data := (get-record-property :IXFDCOLS record)
-     :for column :across (ixf-table-columns (ixf-file-table ixf))
-     :collect (let ((data-type (ixf-column-type column))
-                    (length    (ixf-column-length column))
-                    (pos       (- (ixf-column-pos column) 1))
-                    (nullable  (ixf-column-nullable column)))
-                (parse-ixf-data data-type nullable pos length data))))
+  (let ((babel:*default-character-encoding*
+         (ixf-header-encoding (ixf-file-header ixf))))
+   (loop :with data := (get-record-property :IXFDCOLS record)
+      :for column :across (ixf-table-columns (ixf-file-table ixf))
+      :collect (let ((data-type (ixf-column-type column))
+                     (length    (ixf-column-length column))
+                     (pos       (- (ixf-column-pos column) 1))
+                     (nullable  (ixf-column-nullable column)))
+                 (parse-ixf-data data-type nullable pos length data)))))

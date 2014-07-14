@@ -4,7 +4,7 @@
 
 (in-package #:ixf)
 
-(defstruct ixf-header date time count code-page)
+(defstruct ixf-header date time count code-page encoding)
 
 (defstruct ixf-column
   name nullable has-default default pkey-pos type
@@ -31,7 +31,10 @@
                    (not (and (string/= "00000" single-byte-code-page)
                              (string/= "00000" double-byte-code-page)))))
       (setf (ixf-header-code-page header)
-            (or single-byte-code-page double-byte-code-page)))
+            (or single-byte-code-page double-byte-code-page))
+
+      (setf (ixf-header-encoding header)
+            (babel-encoding-for-code-page (ixf-header-code-page header))))
 
     ;; return the ixf structure itself
     ixf))

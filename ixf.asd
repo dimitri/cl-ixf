@@ -9,20 +9,23 @@
     :depends-on (#:split-sequence       ; split sequences
                  #:md5                  ; check archive checksums
                  #:alexandria           ; utils
+                 #:babel                ; Encoding conversions
                  )
     :components ((:file "package")
-                 (:file "records" :depends-on ("package"))
-                 (:file "types"   :depends-on ("package"))
-                 (:file "struct"  :depends-on ("package"
-                                               "records"
-                                               "types"))
-                 (:file "data"    :depends-on ("package"
-                                               "struct"
-                                               "records"
-                                               "types"))
-                 (:file "ixf"     :depends-on ("package"
-                                               "record"
-                                               "types"
-                                               "struct"
-                                               "data"))))
+                 (:file "records"   :depends-on ("package"))
+                 (:file "types"     :depends-on ("package"))
+                 (:file "encodings" :depends-on ("package"))
+                 (:file "struct"    :depends-on ("package"
+                                                 "records"
+                                                 "types"
+                                                 "encodings"))
+                 (:file "data"      :depends-on ("package"
+                                                 "struct"
+                                                 "records"
+                                                 "types"))
+                 (:file "ixf"       :depends-on ("package"
+                                                 "record"
+                                                 "types"
+                                                 "struct"
+                                                 "data"))))
 

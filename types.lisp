@@ -48,5 +48,6 @@
           (aref data pos)))
 
 (defun parse-ixf-string (data pos length)
-  (map 'string #'code-char (subseq data pos (+ pos length))))
+  "Read an encoded string in data from pos to length."
+  (babel:octets-to-string data :start pos :end (+ pos length)))
 
