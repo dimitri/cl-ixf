@@ -22,6 +22,8 @@
       (#. +float+     (parse-ixf-float data pos length))
 
       (#. +timestamp+ (parse-ixf-timestamp data pos length))
+      (#. +time+      (parse-ixf-time data pos))
+      (#. +date+      (parse-ixf-date data pos))
 
       (#. +char+      (parse-ixf-string data pos length))
 

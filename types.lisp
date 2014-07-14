@@ -134,3 +134,12 @@
         ("(....)-(..)-(..)-(..).(..).(..).(\\d+)" datestring)
       (let ((ns (* frac (expt 10 (- 9 length)))))
         (local-time:encode-timestamp ns sec min hour day month year)))))
+
+(defun parse-ixf-time (data pos)
+  "Read an IXF time ascii string."
+  (let ((timestring (map 'string #'code-char (subseq data pos (+ pos 8)))))
+    (substitute #\: #\. timestring)))
+
+(defun parse-ixf-date (data pos)
+  "Read an IXF date ascii string."
+  (map 'string #'code-char (subseq data pos (+ pos 10))))
