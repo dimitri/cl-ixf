@@ -3,6 +3,8 @@
 ;;;
 ;;; See http://www-01.ibm.com/software/globalization/ccsid/ccsid_registered.html
 
+(in-package #:ixf)
+
 (defvar *ixf-encodings-mapping*
   '(("09580" . :GBK)
     ("00932" . :CP932)

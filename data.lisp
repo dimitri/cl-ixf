@@ -2,7 +2,7 @@
 ;;; Read IBM ixf files data.
 ;;;
 
-(in-package #:ifx)
+(in-package #:ixf)
 
 (defun parse-ixf-data (data-type nullable pos length data)
   "Read data at given POSITION in DATA, with given LENGTH and DATA-TYPE."

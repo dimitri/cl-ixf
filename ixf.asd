@@ -18,17 +18,17 @@
                  (:file "records"   :depends-on ("package"))
                  (:file "types"     :depends-on ("package"))
                  (:file "encodings" :depends-on ("package"))
-                 (:file "struct"    :depends-on ("package"
+                 (:file "structs"   :depends-on ("package"
                                                  "records"
                                                  "types"
                                                  "encodings"))
                  (:file "data"      :depends-on ("package"
-                                                 "struct"
+                                                 "structs"
                                                  "records"
                                                  "types"))
                  (:file "ixf"       :depends-on ("package"
-                                                 "record"
+                                                 "records"
                                                  "types"
-                                                 "struct"
+                                                 "structs"
                                                  "data"))))
 
