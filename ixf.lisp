@@ -15,13 +15,23 @@
   "Return an IXF-FILE data structure filled with information read from FILENAME."
   (read-headers-from-stream stream))
 
+(defun map-data (ixf map-fn &optional (stream *ixf-stream*))
+  "Call map-fn on each row of data read from STREAM given IXF definition."
+  (loop :while (< (file-position stream) (file-length stream))
+     :for record := (read-next-record stream)
+     :when (char= #\D (get-record-property :type record))
+     :do (funcall map-fn (parse-data-record ixf record))))
+
+(defun read-data (ixf &optional (stream *ixf-stream*))
+  "Return the data read from STREAM as a list of list of values."
+  (loop :while (< (file-position stream) (file-length stream))
+     :for record := (read-next-record stream)
+     :when (char= #\D (get-record-property :type record))
+     :collect (parse-data-record ixf record)))
+
 (defun read-ixf-file (filename)
   "Docstring"
   (with-open-file (s filename :element-type '(unsigned-byte 8))
-    (let ((length    (file-length s))
-          (ixf       (read-headers s)))
-      (values ixf
-              (loop :while (< (file-position s) length)
-                 :for record := (read-next-record s)
-                 :when (char= #\D (get-record-property :type record))
-                 :collect (parse-data-record ixf record))))))
+    (let ((ixf       (read-headers s)))
+      (values ixf (read-data ixf s)))))
+
