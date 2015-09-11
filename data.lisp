@@ -32,19 +32,45 @@
                         ;; in a form specified by the IXFTMFRM field.
                         (parse-ixf-string data (+ pos 2) length))))))
 
-(defmethod parse-data-record ((ixf ixf-file) record)
-  "Parse given data record and return what we found."
+(defmethod maybe-read-record ((ixf ixf-file) (col ixf-column) d-id)
+  "Compare current D-ID value with expected (ixf-column-d-id col) and read
+   another record when they don't match"
+  (cond ((= (ixf-column-d-id col) d-id)
+         ;; column still in current record
+         nil)
+
+        ((= (ixf-column-d-id col) (+ 1 d-id))
+         ;; now we need the next D record...
+         (let ((next-record (read-next-record (ixf-file-stream ixf))))
+           (assert (char= #\D (get-record-property :type next-record)))
+           next-record))
+
+        (t
+         (error "Lost sync: current d-id is ~a, next column to be read on ~d."
+                d-id (ixf-column-d-id col)))))
+
+(defmethod read-next-row ((ixf ixf-file) first-record)
+  "Read next IXF row: each row in the table is represented by one or more
+   records, so keep reading D records as we need them."
   (let* ((header (ixf-file-header ixf))
          (table  (ixf-file-table ixf))
          (babel:*default-character-encoding* (ixf-header-encoding header)))
-    (loop :with data := (get-record-property :IXFDCOLS record)
-       :with record := (make-array (ixf-table-ncol table))
+    (loop
+       :with row := (make-array (ixf-table-ncol table))
        :for i :below (ixf-table-ncol table)
        :for column :across (ixf-table-columns table)
-       :do (setf (svref record i)
+
+       :for record
+       := first-record
+       :then (or (maybe-read-record ixf column current-d-id) record)
+
+       :for current-d-id := (get-record-property :IXFDRID record)
+       :for data := (get-record-property :IXFDCOLS record)
+
+       :do (setf (svref row i)
                  (let ((data-type (ixf-column-type column))
                        (length    (ixf-column-length column))
                        (pos       (- (ixf-column-pos column) 1))
                        (nullable  (ixf-column-nullable column)))
                    (parse-ixf-data data-type nullable pos length data)))
-       :finally (return record))))
+       :finally (return row))))

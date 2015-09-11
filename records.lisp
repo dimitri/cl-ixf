@@ -249,10 +249,17 @@ APPLICATION RECORD
 
     (prog1
         (append (list (cons :type record-type))
+                ;; (list (cons :start start))
+                ;; (list (cons :length length))
                 (read-record stream (cddr record-definition) start length))
 
       ;; ensure we skip any unread data that pertains to that record.
       (file-position stream (+ start length 6)))))
+
+(defun header-record-p (record) (char= #\H (get-record-property :type record)))
+(defun table-record-p  (record) (char= #\T (get-record-property :type record)))
+(defun column-record-p (record) (char= #\C (get-record-property :type record)))
+(defun data-record-p   (record) (char= #\D (get-record-property :type record)))
 
 (defun get-record-property (property record)
   "Return the property value for PROPERTY (a symbol) as found in RECORD."
@@ -279,5 +286,11 @@ APPLICATION RECORD
   (with-open-file (s filename :element-type '(unsigned-byte 8))
     (let ((length (file-length s)))
       (loop :while (< (file-position s) length)
-         :do (check-record (alexandria:alist-plist (read-next-record s)))))))
+         :do (check-record (read-next-record s))))))
 
+(defun collect-records (filename)
+  "Validate that we can read FILENAME as an IXF file."
+  (with-open-file (s filename :element-type '(unsigned-byte 8))
+    (let ((length (file-length s)))
+      (loop :while (< (file-position s) length)
+         :collect (read-next-record s)))))

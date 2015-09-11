@@ -13,7 +13,7 @@
 (defstruct ixf-table
   name creator source ncol columns pkey-name desc)
 
-(defstruct ixf-file header table data-position)
+(defstruct ixf-file stream header table data-position)
 
 (defmethod parse-header ((ixf ixf-file) record)
   "Given a record alist, parse its definition into IXF."
@@ -100,10 +100,10 @@
         (string-trim '(#\Space)
                      (get-record-property :IXFCDESC record))))
 
-(defun read-headers-from-stream (stream)
+(defmethod read-headers ((ixf ixf-file))
   "Return an IXF-FILE data structure filled with information read from FILENAME."
-  (let* ((header-record (read-next-record stream))
-         (ixf           (make-ixf-file)))
+  (let* ((stream        (ixf-file-stream ixf))
+         (header-record (read-next-record stream)))
 
     (parse-header ixf header-record)
 

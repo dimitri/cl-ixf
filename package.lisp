@@ -1,12 +1,14 @@
 (defpackage #:ixf
   (:use :cl)
   (:import-from #:split-sequence #:split-sequence)
-  (:export #:*ixf-stream*
+  (:export #:with-ixf-stream
            #:with-ixf-file
            #:read-headers
            #:map-data
            #:read-data
            #:read-ixf-file
+           #:read-next-record
+           #:read-next-row
 
            ;; header structures
            #:ixf-header
@@ -34,7 +36,9 @@
            #:ixf-table-pkey-name
            #:ixf-table-desc
 
+           #:make-ixf-file
            #:ixf-file
+           #:ixf-file-p
            #:ixf-file-header
            #:ixf-file-table
 
