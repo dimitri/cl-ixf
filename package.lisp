@@ -63,4 +63,7 @@
            #:+time+
            #:+timestamp+
            #:+varchar+
-           #:+vargraphic+))
+           #:+vargraphic+
+           #:+blob-location-spec+
+           #:+dbclob-location-spec+
+           #:+dbblob-location-spec+))

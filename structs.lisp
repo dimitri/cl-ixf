@@ -8,12 +8,26 @@
 
 (defstruct ixf-column
   name nullable has-default default pkey-pos type
-  length d-id pos desc)
+  code-page encoding length d-id pos desc)
 
 (defstruct ixf-table
   name creator source ncol columns pkey-name desc)
 
 (defstruct ixf-file stream header table data-position)
+
+(defun parse-encoding (record single-cp-property double-cp-property)
+  "Read the encoding from the RECORD with properties such as :IXFHSBCP
+   and :IXFHDBCP, or :IXFCSBCP and :IXFCDBCP"
+  (let ((single-byte-code-page (get-record-property single-cp-property record))
+        (double-byte-code-page (get-record-property double-cp-property record)))
+      ;; we want to read only one value here.
+      (assert (and (not (and (string= "00000" single-byte-code-page)
+                             (string= "00000" double-byte-code-page)))
+                   (not (and (string/= "00000" single-byte-code-page)
+                             (string/= "00000" double-byte-code-page)))))
+
+      (let ((cp (or single-byte-code-page double-byte-code-page)))
+       (values cp (babel-encoding-for-code-page cp)))))
 
 (defmethod parse-header ((ixf ixf-file) record)
   "Given a record alist, parse its definition into IXF."
@@ -23,18 +37,10 @@
     (setf (ixf-header-count header) (get-record-property :IXFHHCNT record))
 
     ;; read the encoding, either Single-Byte Code Page or Double-Byte Code Page
-    (let ((single-byte-code-page (get-record-property :IXFHSBCP record))
-          (double-byte-code-page (get-record-property :IXFHDBCP record)))
-      ;; we want to read only one value here.
-      (assert (and (not (and (string= "00000" single-byte-code-page)
-                             (string= "00000" double-byte-code-page)))
-                   (not (and (string/= "00000" single-byte-code-page)
-                             (string/= "00000" double-byte-code-page)))))
-      (setf (ixf-header-code-page header)
-            (or single-byte-code-page double-byte-code-page))
-
-      (setf (ixf-header-encoding header)
-            (babel-encoding-for-code-page (ixf-header-code-page header))))
+    (multiple-value-bind (code-page encoding)
+        (parse-encoding record :IXFHSBCP :IXFHDBCP)
+      (setf (ixf-header-code-page header) code-page
+            (ixf-header-encoding header)  encoding))
 
     ;; return the ixf structure itself
     ixf))
@@ -71,12 +77,12 @@
     ;; return the ixf structure itself
     ixf))
 
-(defmethod parse-column-definition ((col ixf-column) record)
+(defmethod parse-column-definition ((col ixf-column) (header ixf-header) record)
   "Parse a Column definition from its record."
   (setf (ixf-column-name col)
-          (subseq (get-record-property :IXFCNAME record)
-                  0
-                  (get-record-property :IXFCNAML record)))
+        (subseq (get-record-property :IXFCNAME record)
+                0
+                (get-record-property :IXFCNAML record)))
 
   (setf (ixf-column-nullable col)
         (char= #\Y (get-record-property :IXFCNULL record)))
@@ -95,6 +101,12 @@
   (setf (ixf-column-length col)   (get-record-property :IXFCLENG record))
   (setf (ixf-column-d-id col)     (get-record-property :IXFCDRID record))
   (setf (ixf-column-pos col)      (get-record-property :IXFCPOSN record))
+
+  (multiple-value-bind (code-page encoding)
+      (parse-encoding record :IXFCSBCP :IXFCDBCP)
+    (setf
+     (ixf-column-code-page col) (or code-page (ixf-header-code-page header))
+     (ixf-column-encoding col)  (or encoding (ixf-header-encoding header))))
 
   (setf (ixf-column-desc col)
         (string-trim '(#\Space)
@@ -124,7 +136,7 @@
        :when (char= #\C (get-record-property :type record))
        :do (let ((column
                   (aref (ixf-table-columns (ixf-file-table ixf)) col-number)))
-             (parse-column-definition column record)
+             (parse-column-definition column (ixf-file-header ixf) record)
              (incf col-number))
 
        :finally (progn

@@ -26,6 +26,9 @@
 (defconstant +timestamp+       392)
 (defconstant +varchar+         448)
 (defconstant +vargraphic+      464)
+(defconstant +blob-location-spec+   960)
+(defconstant +dbclob-location-spec+ 964)
+(defconstant +dbblob-location-spec+ 968) ; unnamed in the spec?
 
 (defun parse-ixf-null (data pos)
   "Read a NULL indicator and returns t when the value is NULL."
@@ -143,3 +146,27 @@
 (defun parse-ixf-date (data pos)
   "Read an IXF date ascii string."
   (map 'string #'code-char (subseq data pos (+ pos 10))))
+
+
+;;;
+;;; external BLOB and CLOBs
+;;;
+(defun parse-ixf-lls (data pos
+                      &key
+                        relative-to
+                        (element-type    '(unsigned-byte 8))
+                        (external-format :ascii))
+  "Parse a LOB Location Specifier."
+  (let ((lls (babel:octets-to-string data :start pos)))
+    (cl-ppcre:register-groups-bind (filename (#'parse-integer offset length))
+        ("^(.*)\\.(\\d+)\\.(\\d+)/$" lls)
+      (with-open-file (blob (make-pathname :defaults relative-to
+                                           :name filename
+                                           :type nil)
+                            :direction :input
+                            :element-type element-type
+                            :external-format external-format)
+        (file-position blob offset)
+        (let ((bytes (make-array length :element-type element-type)))
+          (read-sequence bytes blob)
+          bytes)))))
