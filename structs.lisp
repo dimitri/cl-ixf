@@ -15,19 +15,28 @@
 
 (defstruct ixf-file stream header table data-position)
 
-(defun parse-encoding (record single-cp-property double-cp-property)
+(declaim (inline get-code-page))
+(defun get-code-page (code-page)
+  "Return CODE-PAGE or NIL if it's 00000"
+  (if (string= "00000" code-page) nil code-page))
+
+(defun parse-encoding (record single-cp-property double-cp-property &key strict)
   "Read the encoding from the RECORD with properties such as :IXFHSBCP
    and :IXFHDBCP, or :IXFCSBCP and :IXFCDBCP"
-  (let ((single-byte-code-page (get-record-property single-cp-property record))
-        (double-byte-code-page (get-record-property double-cp-property record)))
-      ;; we want to read only one value here.
-      (assert (and (not (and (string= "00000" single-byte-code-page)
-                             (string= "00000" double-byte-code-page)))
-                   (not (and (string/= "00000" single-byte-code-page)
-                             (string/= "00000" double-byte-code-page)))))
+  (let ((single-byte-code-page
+         (get-code-page (get-record-property single-cp-property record)))
 
-      (let ((cp (or single-byte-code-page double-byte-code-page)))
-       (values cp (babel-encoding-for-code-page cp)))))
+        (double-byte-code-page
+         (get-code-page (get-record-property double-cp-property record))))
+    ;; we want to read only one value here.
+    (when strict
+      (assert (and (not (and (null single-byte-code-page)
+                             (null double-byte-code-page)))
+                   (not (and (null single-byte-code-page)
+                             (null double-byte-code-page))))))
+
+    (let ((cp (or single-byte-code-page double-byte-code-page)))
+      (values cp (babel-encoding-for-code-page cp)))))
 
 (defmethod parse-header ((ixf ixf-file) record)
   "Given a record alist, parse its definition into IXF."
@@ -38,7 +47,7 @@
 
     ;; read the encoding, either Single-Byte Code Page or Double-Byte Code Page
     (multiple-value-bind (code-page encoding)
-        (parse-encoding record :IXFHSBCP :IXFHDBCP)
+        (parse-encoding record :IXFHSBCP :IXFHDBCP :strict t)
       (setf (ixf-header-code-page header) code-page
             (ixf-header-encoding header)  encoding))
 

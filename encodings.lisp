@@ -49,5 +49,6 @@
 
 (defun babel-encoding-for-code-page (code-page)
   "Return a babel encoding for given CODE-PAGE."
-  (or (cdr (assoc code-page *ixf-encodings-mapping* :test #'string=))
-      (error "Unknown Code Page ~s" code-page)))
+  (when code-page
+    (or (cdr (assoc code-page *ixf-encodings-mapping* :test #'string=))
+        (error "Unknown Code Page ~s" code-page))))
